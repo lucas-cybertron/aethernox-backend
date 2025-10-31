@@ -19,8 +19,8 @@ class Loja:
             ]
         }
         self.itens_universais = [
-            {"nome": "Poção de Vida", "preco": 20, "efeito": "cura", "valor": 30},
-            {"nome": "Poção de Mana", "preco": 20, "efeito": "mana", "valor": 30},
+            {"nome": "poção de vida", "preco": 20, "efeito": "cura", "valor": 30},
+            {"nome": "poção de mana", "preco": 20, "efeito": "mana", "valor": 30},
         ]
 
     def obter_itens_classe(self, jogador):
@@ -36,32 +36,36 @@ class Loja:
         Processa a compra de um item com base no índice escolhido.
         Retorna (sucesso, resultado).
         """
-        itens = self.obter_itens_classe(jogador)
-        
-        if indice_item < 1 or indice_item > len(itens):
+        # Combina itens de classe e universais
+        itens_disponiveis = self.obter_itens_classe(jogador) + self.itens_universais
+
+        if indice_item < 1 or indice_item > len(itens_disponiveis):
             return False, "Item inválido!"
-        
-        item = itens[indice_item - 1]
-        
+
+        item = itens_disponiveis[indice_item - 1]
+
         if jogador.ouro < item["preco"]:
             return False, "Ouro insuficiente!"
-        
+
         # Deduz o custo
         jogador.ouro -= item["preco"]
-        
-        # Marca item como comprado
-        classe_itens = self.itens_por_classe[jogador.classe.lower()]
-        for original_item in classe_itens:
-            if original_item["nome"] == item["nome"]:
-                original_item["comprado"] = True
-                break
-        
+
+        # Marca item de classe como comprado, se for da classe
+        if "comprado" in item:
+            classe_itens = self.itens_por_classe[jogador.classe.lower()]
+            for original_item in classe_itens:
+                if original_item["nome"] == item["nome"]:
+                    original_item["comprado"] = True
+                    break
+
         # Adiciona ao inventário
         jogador.inventario[item["nome"]] = jogador.inventario.get(item["nome"], 0) + 1
-        
-        # Aplica bônus
-        for atributo, valor in item["bonus"].items():
-            if hasattr(jogador, atributo):
-                setattr(jogador, atributo, getattr(jogador, atributo) + valor)
-        
+
+        # Aplica bônus se houver (itens de classe)
+        if "bonus" in item:
+            for atributo, valor in item["bonus"].items():
+                if hasattr(jogador, atributo):
+                    setattr(jogador, atributo, getattr(jogador, atributo) + valor)
+
+        # Para itens universais (poções), efeito já é no inventário, nada mais precisa
         return True, item
