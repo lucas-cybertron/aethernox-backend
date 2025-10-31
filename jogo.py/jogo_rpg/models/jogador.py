@@ -7,11 +7,11 @@ class Jogador:
         # Inicializa os atributos básicos do jogador
         # Cada atributo tem uma responsabilidade específica no jogo
 
-        self.classe = classe
+        self.classe = classe.lower()
         self.nivel = 1
         self.xp = 0
         self.xp_proximo_nivel = 100
-        self.ouro = 50
+        self.ouro = 100
         self.reliquias = 0
         
         # Delega a definição de atributos para um método específico
@@ -125,9 +125,8 @@ class Jogador:
         # Responsabilidade única: aplicar bônus específico da classe
         # Cada classe ganha um item diferente com bônus únicos
         bonus = {
-            "guerreiro": {"forca": 5, "item": "espada de Mória"},
+            "guerreira": {"forca": 5, "item": "espada de aço"},
             "mago": {"inteligencia": 5, "item": "cajado de carvalho élfico"},
-            "elfo": {"agilidade": 2, "inteligencia": 3, "item": "adaga de Loki"},
             "arqueiro": {"agilidade": 4, "item": "arco de caça de longo alcance"}
         }
         

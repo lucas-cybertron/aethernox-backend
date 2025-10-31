@@ -11,7 +11,7 @@ class JogadorView:
         print(f" *                                 ")
         print(f" *  Classe: {jogador.classe}        ")
         print(f" *  Nível: {jogador.nivel}         ")
-        print(f" *  Vida: {jogador.vida}          ")
+        print(f" *  Vida: {jogador.vida}/{jogador.vida_max}          ")
         print(f" *  Mana: {jogador.mana}          ")
         print(f" *  XP: {jogador.xp}            ")
         print(f" *  Ouro: {jogador.ouro}          ")

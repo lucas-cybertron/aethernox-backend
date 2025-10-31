@@ -10,18 +10,18 @@ class CenarioView:
         print("\n *================================================*")
         print(" *                 Floresta Morta                   *")
         print(" *                                                  *")
-        print(" *   *")
-        print(" *   *")
-        print(" *          *")
         print(" *                                                  *")
-        print(" *      *")
-        print(" *      *")
-        print(" *       *")
-        print(" *                                      *")
         print(" *                                                  *")
-        print(" *          *")
-        print(" *         *")
-        print(" *       *")
+        print(" *                                                  *")
+        print(" *                                                  *")
+        print(" *                                                  *")
+        print(" *                                                  *")
+        print(" *                                                  *")
+        print(" *                                                  *")
+        print(" *                                                  *")
+        print(" *                                                  *")
+        print(" *                                                  *")
+        print(" *                                                  *")
         print(" *                                                  *")
         print("\n *================================================*")
 
@@ -47,3 +47,34 @@ class CenarioView:
         # Mensagem de conclusão bem-sucedida do jogo
         print("JOGO FINALIZADO")
         input("Pressione enter para finalizar...")
+        
+    @staticmethod
+    def mostrar_floresta_assombrada():
+        print("\n *================================================*")
+        print(" *               Floresta Assombrada             *")
+        print(" * Um lugar sombrio, cheio de espectros e lobos  *")
+        print(" * Fantasmas e criaturas místicas rondam aqui.  *")
+        print(" *                                                  *")
+        print(" * Prepare-se para o combate!                     *")
+        print("\n *================================================*")
+        input("Pressione enter para continuar...")
+
+    @staticmethod
+    def mostrar_caverna_misteriosa():
+        print("\n *================================================*")
+        print(" *               Caverna Misteriosa              *")
+        print(" * Trechos escuros, ecos de criaturas escondidas *")
+        print(" * Goblins e Trolls podem surgir a qualquer momento *")
+        print(" *                                                  *")
+        print(" * Prepare-se para o combate!                     *")
+        print("\n *================================================*")
+        input("Pressione enter para continuar...")
+
+    @staticmethod
+    def mostrar_inimigo(inimigo_nome):
+        # Mensagem genérica para apresentar qualquer inimigo
+        print("\n *================================================*")
+        print(f" *                Você encontrou: {inimigo_nome}")
+        print(" * Prepare-se para o combate!")
+        print("\n *================================================*")
+        input("Pressione enter para continuar...")
