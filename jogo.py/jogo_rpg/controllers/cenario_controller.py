@@ -136,8 +136,6 @@ class CenarioController:
 
         combate_controller = CombateController(self.jogador, inimigo)
         vitoria = combate_controller.executar_combate()
-
-        self.jogador.vida = self.jogador.vida_max
         self.registrar_resultado(inimigo, "vitoria" if vitoria else "derrota")
 
         return vitoria
@@ -162,7 +160,6 @@ class CenarioController:
 
             combate_controller = CombateController(self.jogador, inimigo)
             vitoria = combate_controller.executar_combate()
-            self.jogador.vida = self.jogador.vida_max
 
             if not vitoria:
                 print(f"Você foi derrotado por {inimigo.nome}!")
