@@ -14,11 +14,27 @@ class Inimigo:
         self.xp_inimigo = xp_inimigo  # XP que o jogador ganha ao derrotar
         self.ouro_inimigo = ouro_inimigo  # Ouro que o jogador ganha ao derrotar
 
-    def atacar(self):
-        # Responsabilidade única: calcular dano de ataque do inimigo
-        # Mesmo sistema do jogador: força base + fator aleatório
-        return self.forca + random.randint(1, 10)
+    def atacar(self, jogador):
+        """O inimigo tenta atacar o jogador, mas pode errar com base na agilidade do jogador."""
+        base_erro = 0.1  # chance base de 10%
+        bonus_esquiva = jogador.agilidade * 0.01  # +1% de esquiva por ponto de agilidade
+        chance_erro = min(0.4, base_erro + bonus_esquiva)  # máximo de 40% de erro
 
+        # Verifica se o ataque erra
+        if random.random() < chance_erro:
+            print(f"💨 {jogador.nome} esquivou do ataque de {self.nome}!")
+            return {"dano": 0, "mensagem": f"{self.nome} errou o ataque!"}
+
+        # --- Cálculo de dano ---
+        dano_bruto = random.randint(int(self.forca * 0.8), int(self.forca * 1.5))
+
+        # A defesa reduz cerca de 10% do seu valor (para não anular totalmente o ataque)
+        reducao_defesa = int(jogador.defesa * 0.1)
+        dano_final = max(1, dano_bruto - reducao_defesa)
+
+        mensagem = f"⚔️ {self.nome} atacou causando {dano_final} de dano!"
+        return {"dano": dano_final, "mensagem": mensagem}
+    
     def receber_dano(self, dano):
         # Responsabilidade única: aplicar dano recebido
         # Inimigos não têm defesa, recebem dano total

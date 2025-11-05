@@ -12,7 +12,7 @@ class Jogador:
         self.xp = 0
         self.xp_proximo_nivel = 100
         self.ouro = 100
-        self.reliquias = 0
+        self.aethernox = 0
         
         # Delega a definição de atributos para um método específico
         # Princípio da responsabilidade única: cada método faz uma coisa

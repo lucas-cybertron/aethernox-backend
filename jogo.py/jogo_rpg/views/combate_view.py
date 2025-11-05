@@ -74,6 +74,14 @@ class CombateView:
         # Exibe resultado de uma ação (ataque, magia, item, etc.)
         # Recebe mensagem já formatada do Model/Controller
         print(mensagem)
+    
+    @staticmethod
+    def mostrar_texto(mensagem):
+        # Exibe uma mensagem genérica ao jogador durante o combate
+        # Usado pelo Controller para feedbacks sem lógica extra
+        print("\n✨ " + mensagem + " ✨\n")
+
+        
 
     @staticmethod
     def mostrar_fim_combate(resultado):

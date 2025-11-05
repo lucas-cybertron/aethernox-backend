@@ -1,19 +1,20 @@
-from models.inimigo import Inimigo  # Model
+from models.inimigo import Inimigo
 from models.loja import Loja
-from models.jogador import Jogador  # Model
+from models.jogador import Jogador
 from views.loja_view import LojaView
 from views.jogador_view import JogadorView
-from controllers.combate_controller import CombateController  # Controller
+from controllers.combate_controller import CombateController
+from views.cenario_view import CenarioView
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 import random
-from views.cenario_view import CenarioView
+
 
 class CenarioController:
     def __init__(self, jogador: Jogador):
         self.jogador = jogador
 
-        # Dataset inicial fictício para ML
+        # Dados fictícios para aprendizado de máquina
         dados_guerreira = [
             {"forca_j": 15, "vida_j": 120, "agilidade_j": 6, "vida_i": 30, "forca_i": 8, "resultado": "vitoria"},
             {"forca_j": 12, "vida_j": 110, "agilidade_j": 6, "vida_i": 40, "forca_i": 10, "resultado": "vitoria"},
@@ -32,13 +33,15 @@ class CenarioController:
             {"forca_j": 20, "vida_j": 150, "agilidade_j": 10, "vida_i": 20, "forca_i": 5, "resultado": "vitoria"},
         ]
 
-        # Combina tudo em um único DataFrame
-        self.dados_ml = pd.DataFrame(dados_guerreira + dados_mago + dados_arqueiro + exemplos_extremos*3)
-         
+        self.dados_ml = pd.DataFrame(
+            dados_guerreira + dados_mago + dados_arqueiro + exemplos_extremos * 3
+        )
+
         self.modelo = DecisionTreeClassifier()
         self._treinar_modelo()
 
-    # ---------------- ML ----------------
+    # ==================== MACHINE LEARNING ====================
+
     def _treinar_modelo(self):
         X = self.dados_ml[["forca_j", "vida_j", "agilidade_j", "vida_i", "forca_i"]]
         y = self.dados_ml["resultado"]
@@ -54,10 +57,9 @@ class CenarioController:
         }])
         prob = self.modelo.predict_proba(novo_cenario)[0]
         prob_vitoria = prob[list(self.modelo.classes_).index("vitoria")]
-    
         classe_prevista = self.modelo.predict(novo_cenario)[0]
         return classe_prevista, prob_vitoria
-            
+
     def registrar_resultado(self, inimigo: Inimigo, resultado: str):
         novo_dado = {
             "forca_j": self.jogador.forca,
@@ -69,34 +71,38 @@ class CenarioController:
         }
         self.dados_ml = pd.concat([self.dados_ml, pd.DataFrame([novo_dado])], ignore_index=True)
         self._treinar_modelo()
-        
+
     def balancear_inimigo(self, inimigo: Inimigo, alvo_prob=0.6):
-        """
-        Ajusta inimigo para que a chance de vitória do jogador fique próxima de 'alvo_prob'
-        sem criar inimigos absurdamente fortes.
-        """
         _, prob_vitoria = self.prever_resultado(inimigo)
 
-        max_vida = int(self.jogador.vida * 1.2)
-        max_forca = int(self.jogador.forca * 1.2)
-        min_vida = int(self.jogador.vida * 0.3)
-        min_forca = 1
+        # Salva os valores iniciais para limitar o crescimento
+        vida_base = inimigo.vida
+        forca_base = inimigo.forca
+
+        # Define limites para impedir absurdos
+        max_vida = int(vida_base * 1.5)
+        max_forca = int(forca_base * 1.6)
+        min_vida = int(vida_base * 0.7)
+        min_forca = int(forca_base * 0.7)
 
         tentativas = 0
-        while abs(prob_vitoria - alvo_prob) > 0.03 and tentativas < 15:
-            dif = prob_vitoria - alvo_prob
-
-            # Ajuste proporcional baseado na diferença
-            inimigo.forca = max(min_forca, min(int(inimigo.forca * (1 + dif)), max_forca))
-            inimigo.vida  = max(min_vida, min(int(inimigo.vida * (1 + dif)), max_vida))
+        while abs(prob_vitoria - alvo_prob) > 0.03 and tentativas < 10:
+            # Se a chance de vitória for ALTA (inimigo fraco) → FORTALECER inimigo
+            if prob_vitoria > alvo_prob:
+                inimigo.vida = min(max_vida, inimigo.vida + int(vida_base * 0.05))
+                inimigo.forca = min(max_forca, inimigo.forca + int(forca_base * 0.05))
+            # Se a chance de vitória for BAIXA (inimigo forte) → ENFRAQUECER inimigo
+            else:
+                inimigo.vida = max(min_vida, inimigo.vida - int(vida_base * 0.05))
+                inimigo.forca = max(min_forca, inimigo.forca - int(forca_base * 0.05))
 
             _, prob_vitoria = self.prever_resultado(inimigo)
             tentativas += 1
 
         return inimigo
 
+    # ==================== CENÁRIOS ====================
 
-    # ---------------- Cenários ----------------
     def executar_cenarios(self):
         cenarios = [
             self.floresta_morta,
@@ -109,256 +115,117 @@ class CenarioController:
 
         for cenario in cenarios:
             if not cenario():
-                print("Jornada acabou!")
+                print("⚰️ Jornada encerrada...")
                 return
 
-            if self.jogador.reliquias >= 3:
-                print("Parabéns! Você completou o jogo!")
+            if self.jogador.aethernox >= 1:
+                print("🏆 Você completou o jogo!")
                 return
 
+    # ---------- CENÁRIO 1 ----------
     def floresta_morta(self):
-        print("\n--- Floresta Morta ---")
+        print("\n🌿 --- Floresta Morta --- 🌿")
         CenarioView.mostrar_vila_elder()
         JogadorView.mostrar_status(self.jogador)
-        ladrao = Inimigo("Ladrão de Mória", 30, 8, 30, 20)
-        ladrao = self.balancear_inimigo(ladrao, alvo_prob=0.6)  # 60% de chance de vitória do jogador
-        classe_prevista, prob_vitoria = self.prever_resultado(ladrao)
-        print(f"[ML] Probabilidade de vitória do jogador após balanceamento: {prob_vitoria*100:.1f}%")
 
+        inimigo = Inimigo("Ladrão de Mória", 30, 8, 30, 20)
+        inimigo = self.balancear_inimigo(inimigo, alvo_prob=0.6)
 
-        
-        # Prever resultado antes do combate
-        previsao = self.prever_resultado(ladrao)
-        print(f"[ML] Previsão do combate: {previsao}")
-        print(f"[IA] Previsão de combate: {previsao}")
+        classe_prevista, prob_vitoria = self.prever_resultado(inimigo)
+        print(f"[ML] Probabilidade de vitória: {prob_vitoria*100:.1f}%")
 
-        # Executar combate
-        combate_controller = CombateController(self.jogador, ladrao)
+        combate_controller = CombateController(self.jogador, inimigo)
         vitoria = combate_controller.executar_combate()
+
         self.jogador.vida = self.jogador.vida_max
-        # Registrar resultado no ML
-        self.registrar_resultado(ladrao, "vitoria" if vitoria else "derrota")
+        self.registrar_resultado(inimigo, "vitoria" if vitoria else "derrota")
 
-        if vitoria:
-            item_ganho = self.jogador.ganhar_item_classe()
-            print(f"Você ganhou: {item_ganho}")
-            return True
+        return vitoria
 
-        return False
-
-    def visitar_loja(self):
-        loja = Loja()
-        LojaView.mostrar_boas_vindas()
-
-        while True:
-            # Mostra ouro atual do jogador
-            print(f"\nSeu ouro atual: {self.jogador.ouro}")
-            
-            # Obtém itens da classe do jogador + itens universais
-            itens_disponiveis = loja.obter_itens_classe(self.jogador) + loja.itens_universais
-            LojaView.mostrar_itens(itens_disponiveis)
-
-            # Pede escolha do jogador (já retorna int)
-            escolha = LojaView.pedir_escolha()
-
-            # Validação do input
-            if escolha < 0 or escolha > len(itens_disponiveis):
-                LojaView.mostrar_compra_falha("Escolha inválida!")
-                continue
-
-            if escolha == 0:
-                LojaView.mostrar_saida()
-                break
-
-            # Compra de item
-            sucesso, resultado = loja.comprar_item(self.jogador, escolha)
-
-            if sucesso:
-                # Usa get para evitar KeyError em bonus
-                bonus = resultado.get("bonus", {})
-                LojaView.mostrar_compra_sucesso(resultado["nome"], bonus)
-                print("\n--- STATUS ATUALIZADO ---")
-                JogadorView.mostrar_status(self.jogador)
-            else:
-                LojaView.mostrar_compra_falha(resultado)
-
-        return True
+    # ---------- CENÁRIO 2 ----------
     def floresta_assombrada(self):
-        print("\n--- Floresta Assombrada ---")
+        print("\n🌲 --- Floresta Assombrada --- 🌲")
         CenarioView.mostrar_floresta_assombrada()
         JogadorView.mostrar_status(self.jogador)
 
-        # Inimigos normais
+        # Agora todos têm status parecidos com o Ladrão de Mória
         inimigos = [
-            Inimigo(
-                "Espectro Sombrio",
-                vida=random.randint(20, 50),
-                forca=random.randint(5, 12),
-                xp_inimigo=15,
-                ouro_inimigo=random.randint(5, 15)
-            ),
-            Inimigo(
-                "Lobo Fantasma",
-                vida=random.randint(20, 50),
-                forca=random.randint(5, 12),
-                xp_inimigo=15,
-                ouro_inimigo=random.randint(5, 15)
-            ),
+            Inimigo("Espectro Sombrio", 40, 10, 35, 20),
+            Inimigo("Lobo Fantasma", 60, 10, 35, 20),
+            Inimigo("Espantalho Amaldiçoado", 80, 10, 35, 20)
         ]
 
-        # Batalha com inimigos normais
         for inimigo in inimigos:
             inimigo = self.balancear_inimigo(inimigo, alvo_prob=0.65)
             classe_prevista, prob_vitoria = self.prever_resultado(inimigo)
-            print(f"[ML] Enfrentando {inimigo.nome} | Probabilidade de vitória: {prob_vitoria*100:.1f}%")
-            
+            print(f"[ML] Enfrentando {inimigo.nome} | Chance de vitória: {prob_vitoria*100:.1f}%")
+
             combate_controller = CombateController(self.jogador, inimigo)
             vitoria = combate_controller.executar_combate()
             self.jogador.vida = self.jogador.vida_max
-            self.registrar_resultado(inimigo, "vitoria" if vitoria else "derrota")
 
             if not vitoria:
                 print(f"Você foi derrotado por {inimigo.nome}!")
                 return False
 
-        # --- Boss da Floresta ---
-        boss = Inimigo(
-            "Guardião Sombrio",
-            vida=120,   # Vida maior
-            forca=20,   # Força maior
-            xp_inimigo=150,  # XP muito maior
-            ouro_inimigo=200 # Ouro muito maior
-        )
-        boss = self.balancear_inimigo(boss, alvo_prob=0.55)  # Leve desafio extra
-        classe_prevista, prob_vitoria = self.prever_resultado(boss)
-        print(f"[ML] Enfrentando o BOSS {boss.nome} | Probabilidade de vitória: {prob_vitoria*100:.1f}%")
-        
-        combate_controller = CombateController(self.jogador, boss)
-        vitoria = combate_controller.executar_combate()
-        self.jogador.vida = self.jogador.vida_max
-        self.registrar_resultado(boss, "vitoria" if vitoria else "derrota")
-
-        if not vitoria:
-            print(f"O boss {boss.nome} derrotou você!")
-            return False
-
-        print("Parabéns! Você derrotou todos os inimigos e o boss da Floresta Assombrada!")
+        print("🌕 Você purificou a Floresta Assombrada!")
         return True
 
-
-    def visitar_loja(self):
-        loja = Loja()
-        LojaView.mostrar_boas_vindas()
-
-        while True:
-            # Mostra ouro atual do jogador
-            print(f"\nSeu ouro atual: {self.jogador.ouro}")
-            
-            # Obtém itens da classe do jogador + itens universais
-            itens_disponiveis = loja.obter_itens_classe(self.jogador) + loja.itens_universais
-            LojaView.mostrar_itens(itens_disponiveis)
-
-            # Pede escolha do jogador (já retorna int)
-            escolha = LojaView.pedir_escolha()
-
-            # Validação do input
-            if escolha < 0 or escolha > len(itens_disponiveis):
-                LojaView.mostrar_compra_falha("Escolha inválida!")
-                continue
-
-            if escolha == 0:
-                LojaView.mostrar_saida()
-                break
-
-            # Compra de item
-            sucesso, resultado = loja.comprar_item(self.jogador, escolha)
-
-            if sucesso:
-                # Usa get para evitar KeyError em bonus
-                bonus = resultado.get("bonus", {})
-                LojaView.mostrar_compra_sucesso(resultado["nome"], bonus)
-                print("\n--- STATUS ATUALIZADO ---")
-                JogadorView.mostrar_status(self.jogador)
-            else:
-                LojaView.mostrar_compra_falha(resultado)
-
-        return True
-
+    # ---------- CENÁRIO FINAL ----------
     def caverna_misteriosa(self):
-        print("\n--- Caverna Misteriosa ---")
+        print("\n💀 --- Caverna Misteriosa --- 💀")
         CenarioView.mostrar_caverna_misteriosa()
         JogadorView.mostrar_status(self.jogador)
 
-        # Criação dos inimigos
-        inimigos = [
-            Inimigo(
-                "Goblin Selvagem",
-                vida=random.randint(20, 50),
-                forca=random.randint(5, 12),
-                xp_inimigo=25,
-                ouro_inimigo=random.randint(5, 15)
-            ),
-            Inimigo(
-                "Troll Ancião",
-                vida=random.randint(20, 50),
-                forca=random.randint(5, 12),
-                xp_inimigo=25,
-                ouro_inimigo=random.randint(5, 15)
-            ),
-        ]
+        print("⚔️  O ar fica pesado... algo antigo desperta nas profundezas...")
 
-        # Batalha com cada inimigo
-        for inimigo in inimigos:
-            inimigo = self.balancear_inimigo(inimigo, alvo_prob=0.55)  # Ajusta dificuldade
-            classe_prevista, prob_vitoria = self.prever_resultado(inimigo)
-            print(f"[ML] Enfrentando {inimigo.nome} | Probabilidade de vitória: {prob_vitoria*100:.1f}%")
-            
-            combate_controller = CombateController(self.jogador, inimigo)
-            vitoria = combate_controller.executar_combate()
+        boss_final = Inimigo(
+            "👑 Guardião Sombrio",
+            vida=130,
+            forca=25,
+            xp_inimigo=300,
+            ouro_inimigo=400
+        )
 
-            # Recupera vida do jogador para o próximo inimigo
-            self.jogador.vida = self.jogador.vida_max
+        boss_final = self.balancear_inimigo(boss_final, alvo_prob=0.5)
+        classe_prevista, prob_vitoria = self.prever_resultado(boss_final)
+        print(f"[ML] Enfrentando o BOSS FINAL {boss_final.nome} | Probabilidade de vitória: {prob_vitoria*100:.1f}%")
 
-            self.registrar_resultado(inimigo, "vitoria" if vitoria else "derrota")
+        combate_controller = CombateController(self.jogador, boss_final)
+        vitoria = combate_controller.executar_combate()
+        self.jogador.vida = self.jogador.vida_max
 
-            # Se perder para algum inimigo, termina a caverna
-            if not vitoria:
-                print(f"Você foi derrotado por {inimigo.nome}!")
-                return False
+        if not vitoria:
+            print(f"O boss final {boss_final.nome} derrotou você...")
+            return False
 
-        # Se vencer todos os inimigos
-        print("Você derrotou todos os inimigos da Caverna Misteriosa!")
+        print("🎉 Parabéns! Você derrotou o Guardião Sombrio e completou o jogo!")
+        self.jogador.aethernox += 1
         return True
 
+    # ---------- LOJA ----------
     def visitar_loja(self):
         loja = Loja()
         LojaView.mostrar_boas_vindas()
 
         while True:
-            # Mostra ouro atual do jogador
             print(f"\nSeu ouro atual: {self.jogador.ouro}")
-            
-            # Obtém itens da classe do jogador + itens universais
             itens_disponiveis = loja.obter_itens_classe(self.jogador) + loja.itens_universais
             LojaView.mostrar_itens(itens_disponiveis)
 
-            # Pede escolha do jogador (já retorna int)
             escolha = LojaView.pedir_escolha()
-
-            # Validação do input
-            if escolha < 0 or escolha > len(itens_disponiveis):
-                LojaView.mostrar_compra_falha("Escolha inválida!")
-                continue
 
             if escolha == 0:
                 LojaView.mostrar_saida()
                 break
 
-            # Compra de item
+            if escolha < 0 or escolha > len(itens_disponiveis):
+                LojaView.mostrar_compra_falha("Escolha inválida!")
+                continue
+
             sucesso, resultado = loja.comprar_item(self.jogador, escolha)
 
             if sucesso:
-                # Usa get para evitar KeyError em bonus
                 bonus = resultado.get("bonus", {})
                 LojaView.mostrar_compra_sucesso(resultado["nome"], bonus)
                 print("\n--- STATUS ATUALIZADO ---")

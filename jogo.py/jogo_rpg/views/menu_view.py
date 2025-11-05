@@ -7,7 +7,7 @@ class MenuView:
         # Responsabilidade única: exibir menu principal e coletar escolha
         # Apenas apresentação visual, sem lógica de validação
         print("\n *===============================================*")
-        print(" *            Sombras do Reino Perdido             *")
+        print(" *                  Aethernox                      *")
         print(" *               (1) - Novo Jogo                   *")
         print(" *               (2) - Sair do Jogo                *")
         print("\n *===============================================*")

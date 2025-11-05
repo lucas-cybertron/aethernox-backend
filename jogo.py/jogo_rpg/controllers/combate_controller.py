@@ -75,10 +75,19 @@ class CombateController:
             # Delega magia para o Model
             return self.combate.executar_turno_jogador("magia")
         elif escolha == 3:
-            # View coleta item, Controller passa para Model
+        # View coleta item, Controller passa para Model
             item = self.view.mostrar_itens_disponiveis(self.combate.jogador)
             if item:
-                return self.combate.executar_turno_jogador("item", item)
+                resultado_item = self.combate.executar_turno_jogador("item", item)
+                self.view.mostrar_resultado_acao(resultado_item["mensagem"])
+
+                # 🔹 Permite uma ação extra após usar o item
+                self.view.mostrar_texto("Você ainda pode agir neste turno!")
+                nova_escolha = self.view.mostrar_menu_combate()
+
+                # Executa a nova ação escolhida
+                return self._processar_acao_jogador(nova_escolha)
+
             return {"sucesso": False, "mensagem": ""}
         elif escolha == 4:
             # Delega tentativa de fuga para o Model

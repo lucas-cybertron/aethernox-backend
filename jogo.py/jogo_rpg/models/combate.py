@@ -50,20 +50,38 @@ class Combate:
         return resultado
 
     def executar_turno_inimigo(self):
-        # Responsabilidade única: processar turno do inimigo
-        # Inimigos sempre atacam (IA simples), não têm opções como jogador
+        # Se o inimigo estiver morto, não faz nada
         if not self.inimigo.esta_vivo():
-            return {"dano": 0, "mensagem": ""}  # Inimigo morto não ataca
-            
-        # Inimigo ataca e jogador recebe dano (considerando defesa)
-        dano_inimigo = self.inimigo.atacar()
-        dano_recebido = self.jogador.receber_dano(dano_inimigo)
-        
+            return {"dano": 0, "mensagem": ""}
+
+        # Inimigo tenta atacar o jogador
+        ataque = self.inimigo.atacar(self.jogador)
+        dano_inimigo = ataque["dano"]
+        mensagem = ataque["mensagem"]
+
+        # Aplica o dano ao jogador
+        dano_recebido = max(1, int(dano_inimigo * 0.9 - self.jogador.defesa * 0.2))
+
+        # Se o ataque acertou, substitui o texto por algo mais direto
+        if dano_inimigo > 0:
+            mensagem = f"{self.inimigo.nome} causou {dano_recebido} de dano!"
+            self.jogador.vida -= dano_recebido
+
+        # Garante que a vida não fique negativa
+        if self.jogador.vida < 0:
+            self.jogador.vida = 0
+
+        # Atualiza mensagem para feedback
+        if dano_inimigo > 0:
+            mensagem = f"{self.inimigo.nome} causou {dano_recebido} de dano!"
+        else:
+            mensagem = f"{self.inimigo.nome} errou o ataque!"
+
         return {
             "dano": dano_recebido,
-            "mensagem": f"{self.inimigo.nome} causou {dano_recebido} de dano"
+            "mensagem": mensagem
         }
-
+        
     def verificar_fim_combate(self):
         # Responsabilidade única: verificar condições de fim de combate
         # Retorna informações para o Controller decidir o que fazer
